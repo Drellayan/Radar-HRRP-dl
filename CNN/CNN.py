@@ -38,16 +38,16 @@ test_labels =testdata_base[:,0:3]
 #生成batch数据
 def get_batch_data(batch_size=batch_size):
     # 从tensor列表中按顺序或随机抽取一个tensor
-    input_queue = tf.train.slice_input_producer([hrrp, labels], shuffle=False)
-    hrrp_batch, label_batch = tf.train.batch(input_queue, batch_size=batch_size, num_threads=1, capacity=64)
+    input_queue = tf.compat.v1.train.slice_input_producer([hrrp, labels], shuffle=False)
+    hrrp_batch, label_batch = tf.compat.v1.train.batch(input_queue, batch_size=batch_size, num_threads=1, capacity=64)
     return hrrp_batch, label_batch
 
 [hrrp_batch, label_batch] = get_batch_data(batch_size=batch_size)
 
 def get_test_data(batch_size=batch_size):
     # 从tensor列表中按顺序或随机抽取一个tensor
-    input_queue = tf.train.slice_input_producer([test_hrrp, test_labels], shuffle=False)
-    hrrp_test, label_test = tf.train.batch(input_queue, batch_size=batch_size, num_threads=1, capacity=64)
+    input_queue = tf.compat.v1.train.slice_input_producer([test_hrrp, test_labels], shuffle=False)
+    hrrp_test, label_test = tf.compat.v1.train.batch(input_queue, batch_size=batch_size, num_threads=1, capacity=64)
     return hrrp_test, label_test
 
 [hrrp_test, label_test] = get_batch_data(batch_size=test_batch_size)
@@ -55,9 +55,9 @@ def get_test_data(batch_size=batch_size):
 
 # 占位符输入
 with tf.name_scope('inputs'):
-    x = tf.placeholder(tf.float32, [None, n_input],name='x_in')
-    y = tf.placeholder(tf.float32, [None, n_classes],name='y_in')
-    keep_prob = tf.placeholder(tf.float32,name = 'keep_prob')
+    x = tf.compat.v1.placeholder(tf.float32, [None, n_input],name='x_in')
+    y = tf.compat.v1.placeholder(tf.float32, [None, n_classes],name='y_in')
+    keep_prob = tf.compat.v1.placeholder(tf.float32,name = 'keep_prob')
 
 # 卷积操作
 def conv2d(name, l_input, w, b):
@@ -121,21 +121,21 @@ def alex_net(_X, _weights, _biases, _dropout):
 # 存储所有的网络参数
 with tf.name_scope('Weights'):
     weights = {
-        'wc1': tf.Variable(tf.random_normal([1, 36, 1, 64])),
-        'wc2': tf.Variable(tf.random_normal([1, 36, 64, 128])),
-        'wc3': tf.Variable(tf.random_normal([1, 36, 128, 256])),
-        'wd1': tf.Variable(tf.random_normal([1*32*256, 1024])),
-        'wd2': tf.Variable(tf.random_normal([1024, 1024])),
-        'out': tf.Variable(tf.random_normal([1024, n_classes]))
+        'wc1': tf.Variable(tf.compat.v1.random_normal([1, 36, 1, 64])),
+        'wc2': tf.Variable(tf.compat.v1.random_normal([1, 36, 64, 128])),
+        'wc3': tf.Variable(tf.compat.v1.random_normal([1, 36, 128, 256])),
+        'wd1': tf.Variable(tf.compat.v1.random_normal([1*32*256, 1024])),
+        'wd2': tf.Variable(tf.compat.v1.random_normal([1024, 1024])),
+        'out': tf.Variable(tf.compat.v1.random_normal([1024, n_classes]))
     }
 with tf.name_scope('biases'):
     biases = {
-        'bc1': tf.Variable(tf.random_normal([64])),
-        'bc2': tf.Variable(tf.random_normal([128])),
-        'bc3': tf.Variable(tf.random_normal([256])),
-        'bd1': tf.Variable(tf.random_normal([1024])),
-        'bd2': tf.Variable(tf.random_normal([1024])),
-        'out': tf.Variable(tf.random_normal([n_classes]))
+        'bc1': tf.Variable(tf.compat.v1.random_normal([64])),
+        'bc2': tf.Variable(tf.compat.v1.random_normal([128])),
+        'bc3': tf.Variable(tf.compat.v1.random_normal([256])),
+        'bd1': tf.Variable(tf.compat.v1.random_normal([1024])),
+        'bd2': tf.Variable(tf.compat.v1.random_normal([1024])),
+        'out': tf.Variable(tf.compat.v1.random_normal([n_classes]))
     }
 
 # 构建模型
@@ -145,28 +145,28 @@ pred = alex_net(x, weights, biases, keep_prob)
 with tf.name_scope('loss'):
     cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits = pred, labels = y))
 with tf.name_scope('train'):
-    optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(cost)
+    optimizer = tf.compat.v1.train.AdamOptimizer(learning_rate=learning_rate).minimize(cost)
 
 # 测试网络
 correct_pred = tf.equal(tf.argmax(pred,1), tf.argmax(y,1))
 accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
 
 # 初始化所有的共享变量
-init = tf.global_variables_initializer()
+init = tf.compat.v1.global_variables_initializer()
 
-merged = tf.summary.merge_all()
+merged = tf.compat.v1.summary.merge_all()
 # train_writer = tf.summary.FileWriter(log_dir+'/train',sess.graph)
 # test_writer = tf.summary.FileWriter(log_dir+'/test')
 
 # 开启一个训练
-with tf.Session() as sess:
+with tf.compat.v1.Session() as sess:
     sess.run(init)
-    saver = tf.train.Saver()
-    train_writer = tf.summary.FileWriter(log_dir+'/train',sess.graph)
-    test_writer = tf.summary.FileWriter(log_dir+'/test')
+    saver = tf.compat.v1.train.Saver()
+    train_writer = tf.compat.v1.summary.FileWriter(log_dir+'/train',sess.graph)
+    test_writer = tf.compat.v1.summary.FileWriter(log_dir+'/test')
     step = 1
     coord = tf.train.Coordinator()
-    threads = tf.train.start_queue_runners(sess, coord)
+    threads = tf.compat.v1.train.start_queue_runners(sess, coord)
     print('doing1')
     # Keep training until reach max iterations
     try:
@@ -192,13 +192,13 @@ with tf.Session() as sess:
                 #     saver.save(sess,log_dir+'/model.ckpt',step)
             step += 1
         print ("Optimization Finished!")
-        step2 = 1;
+        step2 = 1
         # 计算测试精度
         while step2 * test_batch_size <= testing_iters:
             test_xs, test_ys = sess.run([hrrp_test, label_test])
             bcc = sess.run(accuracy, feed_dict={x: test_xs, y: test_ys, keep_prob: 1.})
             print ("Iter " + str(step2*test_batch_size) + ", Testing Accuracy = " + "{:.5f}".format(bcc), )
-            step2 += 1;
+            step2 += 1
     except tf.errors.OutOfRangeError:
         print("done")
     finally:
