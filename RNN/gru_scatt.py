@@ -6,9 +6,12 @@ import math
 import scipy.io as scio
 import numpy as np
 
+from kymatio.numpy import Scattering1D
+
 n_input = 256 # 输入的维度
 n_categories = 3 # 标签的维度
 n_samples = 400 # 样本数量
+vocab_size = 84 # 变换后的特征维度
 
 # read data for TRAIN
 #file_name = './Train_hrrp.mat'
@@ -22,9 +25,18 @@ for i in range(256):
 traindata_ex = np.concatenate([traindata_base, inver_train],axis=0)
 
 hrrp = traindata_ex[:,3:]
+print(hrrp.shape)
 labels = traindata_ex[:,:3]
 #hrrp = traindata_base[:,3:]
 #labels = traindata_base[:,:3]
+
+T = hrrp.shape[-1]
+J = 5
+Q = 8
+scattering = Scattering1D(J, T, Q)
+Sx = scattering(hrrp)
+hrrp = Sx.mean(axis=-1)
+print(hrrp.shape)
 
 # grant train class labels from one-hot index to [0; 1; 2]
 la = [i for x in labels for i in range(n_categories) if x[i] == 1]
@@ -65,7 +77,7 @@ def load_data_time_machine(batch_size, num_steps, corpus,
     return data_iter,
 
 def get_params(vocab_size, num_hiddens, device):
-    num_inputs = n_input
+    num_inputs = vocab_size
     num_outputs = n_categories
 
     def normal(shape):
@@ -126,7 +138,6 @@ def train_epoch_ch8(net, train_iter, loss, updater, device, use_random_iter):
         # y = Y
         X, y = X.to(device), y.to(device)
         y_hat, state = net(X, state)
-
 
         #m = nn.Softmax(dim=1)
         #y_hat_ = m(y_hat)
@@ -196,8 +207,8 @@ batch_size, num_steps = 1, 10
 corpus=[hrrp, labels]
 train_iter, = load_data_time_machine(batch_size, num_steps, corpus)
 
-vocab_size, num_hiddens, device = n_input, 128, d2l.try_gpu()
-num_epochs, lr = 100, 0.1
+vocab_size, num_hiddens, device = vocab_size, 128, d2l.try_gpu()
+num_epochs, lr = 500, 0.1
 model = RNNModelScratch(vocab_size, num_hiddens, device, get_params,
                             init_gru_state, gru)
 train_ch8(model, train_iter, lr, num_epochs, device)
@@ -212,6 +223,12 @@ file_name2 = '../HRRP_data/Test_hrrp.mat'
 testdata_base = scio.loadmat(file_name2)['bb']
 test_hrrp = testdata_base[:,3:3+n_input]
 test_labels =testdata_base[:,0:3]
+
+T = test_hrrp.shape[-1]
+scattering = Scattering1D(J, T, Q)
+Sxt = scattering(test_hrrp)
+test_hrrp = Sxt.mean(axis=-1)
+
 # grant test class labels from one-hot index to [0; 1; 2]
 tla = [i for x in test_labels for i in range(n_categories) if x[i] == 1]
 test_labels_vector = np.array(tla, dtype = np.int64)
@@ -246,6 +263,7 @@ def predict(net, test_iter, loss, device, use_random_iter=False):
         """
 
         y = Y.T.reshape(-1)
+        print(f"y: {y}")
         # y = Y
         X, y = X.to(device), y.to(device)
         y_hat, state = net(X, state)

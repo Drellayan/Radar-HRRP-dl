@@ -12,8 +12,8 @@ n_samples = 400 # 样本数量
 
 # read data for TRAIN
 #file_name = './Train_hrrp.mat'
-file_name = '../HRRP_data/Train_hrrp.mat'
-traindata_base =scio.loadmat(file_name)['aa']
+file_name = '../HRRP_data/Train_mellin.mat'
+traindata_base =scio.loadmat(file_name)['Trm']
 
 inver_train = np.copy(traindata_base)
 for i in range(256):
@@ -25,6 +25,7 @@ hrrp = traindata_ex[:,3:]
 labels = traindata_ex[:,:3]
 #hrrp = traindata_base[:,3:]
 #labels = traindata_base[:,:3]
+print(hrrp.shape)
 
 # grant train class labels from one-hot index to [0; 1; 2]
 la = [i for x in labels for i in range(n_categories) if x[i] == 1]
@@ -127,9 +128,8 @@ def train_epoch_ch8(net, train_iter, loss, updater, device, use_random_iter):
         X, y = X.to(device), y.to(device)
         y_hat, state = net(X, state)
 
-
-        #m = nn.Softmax(dim=1)
-        #y_hat_ = m(y_hat)
+        m = nn.Softmax(dim=1)
+        y_hat_ = m(y_hat)
         #print(y_hat_)
         # print(y)
         # print(X.size())
@@ -197,7 +197,7 @@ corpus=[hrrp, labels]
 train_iter, = load_data_time_machine(batch_size, num_steps, corpus)
 
 vocab_size, num_hiddens, device = n_input, 128, d2l.try_gpu()
-num_epochs, lr = 100, 0.1
+num_epochs, lr = 500, 0.1
 model = RNNModelScratch(vocab_size, num_hiddens, device, get_params,
                             init_gru_state, gru)
 train_ch8(model, train_iter, lr, num_epochs, device)
@@ -208,8 +208,8 @@ train_ch8(model, train_iter, lr, num_epochs, device)
 
 
 # read data for TEST
-file_name2 = '../HRRP_data/Test_hrrp.mat'
-testdata_base = scio.loadmat(file_name2)['bb']
+file_name2 = '../HRRP_data/Test_mellin.mat'
+testdata_base = scio.loadmat(file_name2)['Tem']
 test_hrrp = testdata_base[:,3:3+n_input]
 test_labels =testdata_base[:,0:3]
 # grant test class labels from one-hot index to [0; 1; 2]
